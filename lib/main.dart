@@ -4,8 +4,6 @@ import 'package:audioplayers/audio_cache.dart';
 import 'event_brain.dart';
 
 EventBrain eventBrain = new EventBrain();
-int eventNumber = 5;
-String element = eventBrain.eventBank[5].segmentName;
 
 void main() => runApp(MyApp());
 
@@ -34,15 +32,30 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
-
-
-  int _counter = 10;
-  int _maxTime = 10;
+  int _runSeconds = 0;
+  int _eventNumber = 0;
+  int _eventBankLength = eventBrain.eventBank.length;
+  int _counter = 0;
+  int _startEventTime = 0;
+  int _endEventTime = 0;
+  int _eventDuration = 0;
+  String _colour = '';
   double _progress = 0;
   double _progressValue = 0;
 //  print(_counter);
 //  final dur = duration(seconds: _counter),
   Timer _timer;
+  _MyHomePageState(){
+
+    this._counter = eventBrain.eventBank[_eventBankLength - 2].runTime;
+    this._startEventTime = eventBrain.eventBank[_eventNumber].runTime;
+    this._endEventTime = eventBrain.eventBank[_eventNumber + 1].runTime;
+    this._eventDuration = _endEventTime - _startEventTime;
+    this._colour = eventBrain.eventBank[_eventNumber].lpibgColor;
+    //print('endEventTime = $_endEventTime');
+  }
+
+
 
   void beep(String beep) {
     final player = AudioCache();
@@ -55,8 +68,21 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         if (_counter > 0) {
           _counter--;
-          _progress++;
-          _progressValue = _progress/_maxTime;
+          _runSeconds++;
+         // print('runSeconds = $_runSeconds endEventTime = $_endEventTime');
+         // print(_endEventTime);
+          if (_runSeconds == _endEventTime) {
+            _progress = 0;
+            _eventNumber++;
+            _startEventTime = eventBrain.eventBank[_eventNumber].runTime;
+            _endEventTime = eventBrain.eventBank[_eventNumber + 1].runTime;
+            beep (eventBrain.eventBank[_eventNumber].action);
+          }
+
+            _progressValue = _progress/_eventDuration;
+            _progress++;
+           // print ('progressValue = $_progressValue eventNumber = $_eventDuration');
+            //print (_eventNumber);
 
         } else {
           _timer.cancel();
@@ -87,7 +113,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               elevation: 10,
               child: Text(
-                  element,
+                eventBrain.eventBank[_eventNumber].segmentName,
                    style: Theme.of(context).textTheme.display1,
                 ),
             ),
@@ -97,7 +123,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 child:
                 LinearProgressIndicator(
                 value: _progressValue,
-                backgroundColor: Colors.cyan,
+                backgroundColor: Colors.blue,
                 semanticsLabel: 'Warmup',
             ),
             ),

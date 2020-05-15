@@ -47,7 +47,7 @@ flutter:
   assets:
   - assets/highBeep.mp3
   - assets/lowBeep.mp3
-  - assets/PipBeep.mp3
+  - assets/pipBeep.mp3
   - assets/beep-07.mp3
 
   #  - images/a_dot_ham.jpeg
