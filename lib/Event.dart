@@ -1,10 +1,12 @@
+import 'dart:ui';
 class Event {
   int runTime;
   String segmentName;
+  bool newSegment;
   String action;
-  String lpibgColor;
+  Color lpibgColor;
 
-  Event (this.runTime, this.segmentName, this.action, this.lpibgColor);
+  Event (this.runTime, this.segmentName, this.newSegment, this.action, this.lpibgColor);
 // Methods (Functions)
 // Getters and Setters
 }

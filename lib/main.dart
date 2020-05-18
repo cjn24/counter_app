@@ -1,6 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:audioplayers/audio_cache.dart';
+import 'package:flutter/rendering.dart';
 import 'event_brain.dart';
 
 EventBrain eventBrain = new EventBrain();
@@ -16,7 +18,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
       primarySwatch: Colors.teal,
       ),
-      home: MyHomePage(title: 'Counter App'),
+      home: MyHomePage(title: 'High Interval Intensity Training App'),
     );
   }
 }
@@ -39,9 +41,12 @@ class _MyHomePageState extends State<MyHomePage> {
   int _startEventTime = 0;
   int _endEventTime = 0;
   int _eventDuration = 0;
-  String _colour = '';
+  Color _progressColor = Colors.red;
   double _progress = 0;
   double _progressValue = 0;
+  bool _newSegment;
+
+
 //  print(_counter);
 //  final dur = duration(seconds: _counter),
   Timer _timer;
@@ -51,8 +56,10 @@ class _MyHomePageState extends State<MyHomePage> {
     this._startEventTime = eventBrain.eventBank[_eventNumber].runTime;
     this._endEventTime = eventBrain.eventBank[_eventNumber + 1].runTime;
     this._eventDuration = _endEventTime - _startEventTime;
-    this._colour = eventBrain.eventBank[_eventNumber].lpibgColor;
-    //print('endEventTime = $_endEventTime');
+    this._progressColor = eventBrain.eventBank[_eventNumber].lpibgColor;
+    this._newSegment = eventBrain.eventBank[_eventNumber].newSegment;
+
+
   }
 
 
@@ -71,18 +78,23 @@ class _MyHomePageState extends State<MyHomePage> {
           _runSeconds++;
          // print('runSeconds = $_runSeconds endEventTime = $_endEventTime');
          // print(_endEventTime);
+        print ('runSeconds $_runSeconds eventNumber $_eventNumber eventDuration = $_eventDuration progress $_progress');
+          if (_progress == _eventDuration -3) {beep('pipBeep.mp3');}
+          if (_progress == _eventDuration -2) {beep('pipBeep.mp3');}
+          if (_progress == _eventDuration -1) {beep('pipBeep.mp3');}
           if (_runSeconds == _endEventTime) {
-            _progress = 0;
-            _eventNumber++;
-            _startEventTime = eventBrain.eventBank[_eventNumber].runTime;
-            _endEventTime = eventBrain.eventBank[_eventNumber + 1].runTime;
-            beep (eventBrain.eventBank[_eventNumber].action);
-          }
-
+              _progress = 0;
+              _eventNumber++;
+              _startEventTime = eventBrain.eventBank[_eventNumber].runTime;
+              _endEventTime = eventBrain.eventBank[_eventNumber + 1].runTime;
+              _progressColor = eventBrain.eventBank[_eventNumber].lpibgColor;
+              _eventDuration = _endEventTime - _startEventTime;
+              beep (eventBrain.eventBank[_eventNumber].action);
+            }
             _progressValue = _progress/_eventDuration;
             _progress++;
-           // print ('progressValue = $_progressValue eventNumber = $_eventDuration');
-            //print (_eventNumber);
+         // print ('progressValue = $_progressValue eventNumber = $_eventDuration');
+         //print (_eventNumber);
 
         } else {
           _timer.cancel();
@@ -109,38 +121,54 @@ class _MyHomePageState extends State<MyHomePage> {
 
             Card(
               shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0)
+              borderRadius: BorderRadius.circular(5.0),
               ),
               elevation: 10,
-              child: Text(
-                eventBrain.eventBank[_eventNumber].segmentName,
-                   style: Theme.of(context).textTheme.display1,
-                ),
-            ),
-            SizedBox(
+              child: Container(
+               // padding: new EdgeInsets.fromLTRB(32.0,10.0,32.0,10.0),
+                width: 325.0,
                 height: 40.0,
-                width: 300.0,
+                child: Text(
+                  eventBrain.eventBank[_eventNumber].segmentName,
+                  style: Theme.of(context).textTheme.display1,
+                  textAlign: TextAlign.center,
+                  ),
+              ),
+            ),
+            Container(
+                height: 40.0,
+                width: 325.0,
                 child:
                 LinearProgressIndicator(
                 value: _progressValue,
-                backgroundColor: Colors.blue,
-                semanticsLabel: 'Warmup',
+                backgroundColor: _progressColor,
+                ),
             ),
+            SizedBox(
+              height: 100.0,
+              width: 325.0,
+
             ),
- 
             Card(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0)
+                borderRadius: BorderRadius.circular(5.0)
               ),
               elevation: 10,
-              child: Text(
-                clockString(_counter),
-                style: Theme.of(context).textTheme.display1,
+              child: Container(
+                width: 325.0,
+                height: 40.0,
+                child: Text(
+                  clockString(_counter),
+                  style: Theme.of(context).textTheme.display1,
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
+
           ],
         ),
       ),
+
       floatingActionButton: FloatingActionButton(
         onPressed:
         _startTimer,
@@ -160,3 +188,8 @@ class _MyHomePageState extends State<MyHomePage> {
     return clock;
   }
 
+LinearProgressIndicator progressBarColor(color) {
+  return LinearProgressIndicator(
+    backgroundColor: color,
+  );
+}
