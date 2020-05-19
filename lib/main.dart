@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
       primarySwatch: Colors.teal,
       ),
-      home: MyHomePage(title: 'High Interval Intensity Training App'),
+      home: MyHomePage(title: 'Interval Training App'),
     );
   }
 }
@@ -34,34 +34,24 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
-  int _runSeconds = 0;
   int _eventNumber = 0;
   int _eventBankLength = eventBrain.eventBank.length;
   int _counter = 0;
-  int _startEventTime = 0;
-  int _endEventTime = 0;
   int _eventDuration = 0;
   Color _progressColor = Colors.red;
-  double _progress = 0;
+  int _progress = 0;
   double _progressValue = 0;
-  bool _newSegment;
 
-
-//  print(_counter);
-//  final dur = duration(seconds: _counter),
   Timer _timer;
   _MyHomePageState(){
 
-    this._counter = eventBrain.eventBank[_eventBankLength - 2].runTime;
-    this._startEventTime = eventBrain.eventBank[_eventNumber].runTime;
-    this._endEventTime = eventBrain.eventBank[_eventNumber + 1].runTime;
-    this._eventDuration = _endEventTime - _startEventTime;
+    //this._counter = eventBrain.eventBank[_eventBankLength - 1].runTime;
+    //this._startEventTime = eventBrain.eventBank[_eventNumber].runTime;
+    //this._endEventTime = eventBrain.eventBank[_eventNumber + 1].runTime;
+    this._eventDuration = eventBrain.eventBank[_eventNumber].eventDuration;
     this._progressColor = eventBrain.eventBank[_eventNumber].lpibgColor;
-    this._newSegment = eventBrain.eventBank[_eventNumber].newSegment;
-
-
-  }
-
+    this._counter = lengthOfWorkout();
+    }
 
 
   void beep(String beep) {
@@ -70,36 +60,66 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _startTimer() {
+   // _counter = lengthOfWorkout();
+
+         print(
+        'counter $_counter eventNumber $_eventNumber eventDuration = $_eventDuration progress $_progress progressValue $_progressValue');
      beep ('highBeep.mp3');
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
+        print(
+           'counter $_counter eventNumber $_eventNumber eventDuration = $_eventDuration progress $_progress progressValue $_progressValue');
         if (_counter > 0) {
           _counter--;
-          _runSeconds++;
-         // print('runSeconds = $_runSeconds endEventTime = $_endEventTime');
-         // print(_endEventTime);
-        print ('runSeconds $_runSeconds eventNumber $_eventNumber eventDuration = $_eventDuration progress $_progress');
-          if (_progress == _eventDuration -3) {beep('pipBeep.mp3');}
-          if (_progress == _eventDuration -2) {beep('pipBeep.mp3');}
-          if (_progress == _eventDuration -1) {beep('pipBeep.mp3');}
-          if (_runSeconds == _endEventTime) {
-              _progress = 0;
-              _eventNumber++;
-              _startEventTime = eventBrain.eventBank[_eventNumber].runTime;
-              _endEventTime = eventBrain.eventBank[_eventNumber + 1].runTime;
-              _progressColor = eventBrain.eventBank[_eventNumber].lpibgColor;
-              _eventDuration = _endEventTime - _startEventTime;
-              beep (eventBrain.eventBank[_eventNumber].action);
-            }
-            _progressValue = _progress/_eventDuration;
-            _progress++;
-         // print ('progressValue = $_progressValue eventNumber = $_eventDuration');
-         //print (_eventNumber);
+
+          switch (_eventDuration - _progress) {
+
+            case 0: // Reached the end of an interval, reset the progress, event duration & progress bar colour
+              {
+                _progress = 1;
+                _eventNumber++;
+                _progressColor = eventBrain.eventBank[_eventNumber].lpibgColor;
+                _eventDuration = eventBrain.eventBank[_eventNumber].eventDuration;
+                _progressValue = _progress / _eventDuration;
+                beep(eventBrain.eventBank[_eventNumber].action);
+              }
+            break;
+
+            case 1: // beep 1 second warning & increment counters
+              {
+                _progress++;
+                _progressValue = _progress / _eventDuration;
+                beep('pipBeep.mp3');
+              }
+            break;
+
+            case 2: // beep 2 second warning & increment counters
+              {
+                _progress++;
+                _progressValue = _progress / _eventDuration;
+                beep('pipBeep.mp3');
+              }
+            break;
+
+            case 3: // beep 3 second warning & increment counters
+              {
+                _progress++;
+                _progressValue = _progress / _eventDuration;
+                beep('pipBeep.mp3');
+              }
+            break;
+
+            default: // > 3 seconds before end of interval, increment counters only
+              {
+                _progress++;
+                _progressValue = _progress / _eventDuration;
+              }
+            break;
+          }
 
         } else {
           _timer.cancel();
-        }
-      });
+      }});
     });
   }
 
@@ -193,3 +213,12 @@ LinearProgressIndicator progressBarColor(color) {
     backgroundColor: color,
   );
 }
+// Calculate the total length of the workout
+int lengthOfWorkout() {
+  int workoutLength = 0;
+  for (var i = 0; i < eventBrain.eventBank.length; i++) {
+    workoutLength += eventBrain.eventBank[i].eventDuration;
+  }
+  return workoutLength;
+}
+
