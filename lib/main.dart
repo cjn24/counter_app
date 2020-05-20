@@ -35,7 +35,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
 
   int _eventNumber = 0;
-  int _eventBankLength = eventBrain.eventBank.length;
+//  int _eventBankLength = eventBrain.eventBank.length;
   int _counter = 0;
   int _eventDuration = 0;
   Color _progressColor = Colors.red;
@@ -53,11 +53,6 @@ class _MyHomePageState extends State<MyHomePage> {
     this._counter = lengthOfWorkout();
     }
 
-
-  void beep(String beep) {
-    final player = AudioCache();
-    player.play(beep);
-  }
 
   void _startTimer() {
    // _counter = lengthOfWorkout();
@@ -86,34 +81,19 @@ class _MyHomePageState extends State<MyHomePage> {
             break;
 
             case 1: // beep 1 second warning & increment counters
-              {
-                _progress++;
-                _progressValue = _progress / _eventDuration;
-                beep('pipBeep.mp3');
-              }
+              { updateProgress(true); }
             break;
 
             case 2: // beep 2 second warning & increment counters
-              {
-                _progress++;
-                _progressValue = _progress / _eventDuration;
-                beep('pipBeep.mp3');
-              }
+              { updateProgress(true); }
             break;
 
             case 3: // beep 3 second warning & increment counters
-              {
-                _progress++;
-                _progressValue = _progress / _eventDuration;
-                beep('pipBeep.mp3');
-              }
+              { updateProgress(true); }
             break;
 
             default: // > 3 seconds before end of interval, increment counters only
-              {
-                _progress++;
-                _progressValue = _progress / _eventDuration;
-              }
+              { updateProgress(false); }
             break;
           }
 
@@ -122,6 +102,8 @@ class _MyHomePageState extends State<MyHomePage> {
       }});
     });
   }
+
+
 
 
   @override
@@ -197,6 +179,13 @@ class _MyHomePageState extends State<MyHomePage> {
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+  void updateProgress(bool doBeep) {
+    _progress++;
+    _progressValue = _progress / _eventDuration;
+    if (doBeep) {
+    beep('pipBeep.mp3');
+    }
+    }
 }
   String clockString(int totalSeconds) {
     int seconds = totalSeconds % 60;
@@ -220,5 +209,10 @@ int lengthOfWorkout() {
     workoutLength += eventBrain.eventBank[i].eventDuration;
   }
   return workoutLength;
+}
+
+void beep(String beep) {
+  final player = AudioCache();
+  player.play(beep);
 }
 
