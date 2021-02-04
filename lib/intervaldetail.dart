@@ -7,6 +7,8 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'interval.dart';
 import 'workoutdata.dart';
+import 'menuitems.dart';
+import 'main.dart';
 
 
 
@@ -14,10 +16,11 @@ import 'workoutdata.dart';
 // Create a Form widget.
 class IntervalDetail extends StatefulWidget {
   final WorkoutData data;
-  IntervalDetail({this.data});
+  final choice;
+  IntervalDetail({this.data, this.choice});
   @override
   IntervalDetailState createState() {
-    return IntervalDetailState(data);
+    return IntervalDetailState(data, choice);
   }
 }
 
@@ -32,41 +35,103 @@ class IntervalDetailState extends State<IntervalDetail> {
   final _formKey = GlobalKey<FormState>();
 
 
-  String _value = '';
-  int _sequenceOfInterval = 1;
-  int _currentMinutes = 5;
-  int _currentSeconds = 30;
-  int _runTime = 0;
+
+
+//  int sequenceOfInterval = 1;
+  int _currentMinutes;
+  int _currentSeconds;
+//  int _runTime = 0;
   int _durationOfInterval = 0;
   String _groupbgColour = 'Colors.red';
   String _nameOfInterval = '';
   String _groupBeep = 'highBeep.mp3';
   String _beepType = 'highBeep.mp3';
   String _bgColour = 'Colors.red';
-  String _recordOfInterval;
-  String _nameOfWorkout = '';
   int _lengthOfWorkout;
+  String _value;
 
-  List<Intervall> _intervalData = List<Intervall>();
+  @override
+  void initState() {
+/*   _value = data.nameOfInterval;
+    _nameOfInterval =
+        intervalBrain.intervalBank[sequenceOfInterval].nameOfInterval;
+    print ('sequence of interval is $sequenceOfInterval, name of interval in init is $_nameOfInterval');
+
+    _currentMinutes = data.currentMinutes;
+    _currentSeconds = data.currentSeconds;
+    _durationOfInterval = data.durationOfInterval;
+    _groupbgColour = data.lpibgColor;
+    _nameOfInterval = data.nameOfInterval;
+    _groupBeep = data.action;
+    _beepType = data.action;
+    _bgColour = data.lpibgColor;
+*/
+    _initialiseIntervalRecords();
+    super.initState();
+  }
+
+
+
+//  List<Intervall> _intervalData = List<Intervall>();
   final WorkoutData data;
-  IntervalDetailState(this.data);
+  final choice;
+  IntervalDetailState(this.data, this.choice);
 
   // Initialize default values on screen
 
-  void _initialiseDefaults() {
-    print('Inside initialize defaults');
-    setState(() {
-      _value = '';
-      _currentMinutes = 5;
-      _currentSeconds = 30;
-      _durationOfInterval = 0;
-      _groupbgColour = 'Colors.red';
-      _nameOfInterval = '';
-      _groupBeep = 'highBeep.mp3';
-      _beepType = 'highBeep.mp3';
-      _bgColour = 'Colors.red';
-      _sequenceOfInterval++;
-    });
+  void _initialiseIntervalRecords() {
+
+    print('Inside initialize Interval Records seq = $sequenceOfInterval');
+
+    switch (choice) {
+
+      case MenuItems.add:
+        {
+          setState(() {
+//            _value = '';
+            _currentMinutes = 5;
+            _currentSeconds = 30;
+            _durationOfInterval = 0;
+            _groupbgColour = 'Colors.red';
+            _nameOfInterval = '';
+            _groupBeep = 'highBeep.mp3';
+            _beepType = 'highBeep.mp3';
+            _bgColour = 'Colors.red';
+            sequenceOfInterval++;
+          });
+        }
+        break;
+
+      case MenuItems.edit:
+        {
+          setState(() {
+//            _value =
+//                intervalBrain.intervalBank[sequenceOfInterval].nameOfInterval;
+          print ('in edit part of initialize interval records');
+            _nameOfInterval =
+            intervalBrain.intervalBank[sequenceOfInterval].nameOfInterval;
+            _currentMinutes = (intervalBrain.intervalBank[sequenceOfInterval]
+                .durationOfInterval ~/ 36) % 60;
+            _currentSeconds = intervalBrain.intervalBank[sequenceOfInterval]
+                .durationOfInterval % 60;
+            _durationOfInterval =
+                intervalBrain.intervalBank[sequenceOfInterval]
+                    .durationOfInterval;
+            _groupbgColour =
+                intervalBrain.intervalBank[sequenceOfInterval].lpibgColor;
+            _nameOfInterval =
+                intervalBrain.intervalBank[sequenceOfInterval].nameOfInterval;
+            _groupBeep = intervalBrain.intervalBank[sequenceOfInterval].action;
+            _beepType = intervalBrain.intervalBank[sequenceOfInterval].action;
+            _bgColour =
+                intervalBrain.intervalBank[sequenceOfInterval].lpibgColor;
+            print ('Seq = $sequenceOfInterval name of interval $_nameOfInterval current seconds $_currentSeconds');
+            sequenceOfInterval++;
+          });
+        }
+        break;
+
+    }
   }
 
 
@@ -94,8 +159,8 @@ class IntervalDetailState extends State<IntervalDetail> {
   _read() async {
     try {
       final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/$_nameOfWorkout.txt');
-      print('${directory.path}/$_nameOfWorkout.txt');
+      final file = File('${directory.path}/${data.nameOfWorkout}.txt');
+      print('file = $file');
       String text = await file.readAsString();
       print(text);
     } catch (e) {
@@ -103,15 +168,17 @@ class IntervalDetailState extends State<IntervalDetail> {
     }
   }
 
-  Future _save(data) async {
-//    String result = utf8.decode(data);
-    String result = jsonEncode(data);
+  Future _save(wrkData) async {
+//    String result = utf8.decode(wrkData);
+    String result = jsonEncode(wrkData);
     print(result);
     final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$_nameOfWorkout.txt');
+    final file = File('${directory.path}/${data.nameOfWorkout}.txt');
 
     await file.writeAsString(result); // mode: FileMode.append);
     print('saved');
+    Navigator.pop(context);
+    Navigator.pop(context);
   }
 
   // Build and save each Interval record to an array
@@ -121,22 +188,25 @@ class IntervalDetailState extends State<IntervalDetail> {
       // If the form is valid, display a Snackbar.
 
     print ('length of workout hours in build interval record ${data.nameOfWorkout}');
-      _lengthOfWorkout = (data.lengthOfWorkoutHours * 60) + data.lengthOfWorkoutMinutes;
+      _lengthOfWorkout = (data.lengthOfWorkoutHours * 3600) + (data.lengthOfWorkoutMinutes * 60);
+      print ('current minutes = $_currentMinutes');
       _durationOfInterval = (_currentMinutes * 60) + _currentSeconds;
-      _runTime = _runTime + _durationOfInterval;
-      _intervalData.add(Intervall(
+      print ('duration of interval = $_durationOfInterval');
+      print ('runtime = $runTime name of interval $_nameOfInterval');
+      runTime = runTime + _durationOfInterval;
+      intervalData.add(Intervall(
           data.nameOfWorkout,
           _lengthOfWorkout,
           data.numberOfIntervals,
-          _sequenceOfInterval,
-          _runTime,
+          sequenceOfInterval,
+          runTime,
           _durationOfInterval,
           _nameOfInterval,
           _beepType,
           _bgColour));
-      print(_intervalData);
+      print(intervalData);
 //     interval.printValues();
-      _initialiseDefaults();
+//      _initialiseIntervalRecords(choice);
 //    }
   }
 
@@ -160,7 +230,7 @@ class IntervalDetailState extends State<IntervalDetail> {
 
 //          Show the name of the workout
               new Text(
-                'Workout: $_nameOfWorkout',
+                '${data.nameOfWorkout}',
                 textAlign: TextAlign.center,
                 style: new TextStyle(
                   fontSize: 16.0,
@@ -171,7 +241,7 @@ class IntervalDetailState extends State<IntervalDetail> {
 
 //          Show the number of the Interval
               new Text(
-                ' Interval ${data.nameOfWorkout}',
+                ' Interval $sequenceOfInterval',
                 textAlign: TextAlign.center,
                 style: new TextStyle(
                   fontSize: 16.0,
@@ -183,25 +253,32 @@ class IntervalDetailState extends State<IntervalDetail> {
 //          Get the name of the Interval
 
 
-           TextFormField(
-                decoration: const InputDecoration(labelText: 'Name of Interval'),
+              new TextFormField(
+//                decoration: const InputDecoration(labelText: 'Name of Interval'),
                 keyboardType: TextInputType.text,
 
-              validator: (value) {
-                if (value.isEmpty) {
+//                  setState(() {
+              initialValue: _nameOfInterval,
+
+              validator: (_value) {
+                if (_value.isEmpty) {
                   return 'Please enter some text';
                 }
                   return null;
               },
 
                 onChanged: (_value) =>
-                    setState(() { _nameOfInterval = _value;
+                    setState(() {
                     print ('name of interval $_nameOfInterval');
                     print (data.nameOfWorkout);
                     print (data.lengthOfWorkoutHours);
                     print (data.lengthOfWorkoutMinutes);
                     print (data.numberOfIntervals);
-                                        })
+                    print (data.nameOfInterval);
+                    print (data.currentMinutes);
+                    print (data.currentSeconds);
+                    print ('data choice in intervalDetail $choice');
+                    })
             ),
 
               new Divider(height: 5.0, color: Colors.black),
@@ -213,12 +290,13 @@ class IntervalDetailState extends State<IntervalDetail> {
                   Column(
                     children: <Widget>[
                       new NumberPicker.integer(
-                          initialValue: _currentMinutes,
+                          initialValue: data.currentMinutes,
                           minValue: 0,
                           maxValue: 59,
                           onChanged: (newValue) =>
                               setState(() {
                                 _currentMinutes = newValue;
+                                print ('data.currentMinutes = ${data.currentMinutes}');
                                 print('current minutes $_currentMinutes');
                               })),
                       new Text('Minutes: $_currentMinutes'),
@@ -227,7 +305,7 @@ class IntervalDetailState extends State<IntervalDetail> {
                   Column(
                     children: <Widget>[
                       new NumberPicker.integer(
-                          initialValue: _currentSeconds,
+                          initialValue: data.currentSeconds,
                           minValue: 0,
                           maxValue: 59,
                           onChanged: (newValue) =>
@@ -368,6 +446,18 @@ class IntervalDetailState extends State<IntervalDetail> {
                     child: RaisedButton(
                       onPressed: () {
                         _buildIntervalRecord();
+
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (BuildContext context) => IntervalDetail(
+                                    data: data,
+                                    choice: choice
+                                )),
+                          );
+
+
+
                       },
                       child: Text('Next'),
                     ),
@@ -375,10 +465,10 @@ class IntervalDetailState extends State<IntervalDetail> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: RaisedButton(
-                      child: Text('Finished'),
+                      child: Text('Save'),
                       onPressed: () {
-                        _save(_intervalData);
-                      },
+                        _save(intervalData);
+                       },
                     ),
                   ),
                   Padding(

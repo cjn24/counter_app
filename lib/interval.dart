@@ -1,4 +1,7 @@
 import 'dart:ui';
+import 'interval.dart';
+import 'package:flutter/material.dart';
+
 class Intervall {
   String nameOfWorkout;
   int lengthOfWorkout;
@@ -8,32 +11,89 @@ class Intervall {
   int durationOfInterval;
   String nameOfInterval;
   String action;
-  dynamic lpibgColor;
+  String lpibgColor;
 
-  Intervall (this.nameOfWorkout, this.lengthOfWorkout, this.numberOfIntervals, this.sequenceOfInterval, this.runTime, this.durationOfInterval, this.nameOfInterval, this.action, this.lpibgColor);
+  Intervall(this.nameOfWorkout, this.lengthOfWorkout, this.numberOfIntervals,
+      this.sequenceOfInterval, this.runTime, this.durationOfInterval,
+      this.nameOfInterval, this.action, this.lpibgColor);
 
   @override
   String toString() {
-    return '{ ${this.nameOfWorkout}, ${this.lengthOfWorkout}, ${this.numberOfIntervals}, ${this.sequenceOfInterval}, ${this.runTime}, ${this.durationOfInterval}, ${this.nameOfInterval}, ${this.action}, ${this.lpibgColor} }';
+    return '{ ${this.nameOfWorkout}, ${this.lengthOfWorkout}, ${this
+        .numberOfIntervals}, ${this.sequenceOfInterval}, ${this.runTime}, ${this
+        .durationOfInterval}, ${this.nameOfInterval}, ${this.action}, ${this
+        .lpibgColor} }';
   }
+
   // JSON mapping
-  Map toJson() => {
-    'name of workout': nameOfWorkout,
-    'lenght of workout': lengthOfWorkout,
-    'number of intervals': numberOfIntervals,
-    'sequence of interval': sequenceOfInterval,
-    'run time': runTime,
-    'duration of interval': durationOfInterval,
-    'name of interval': nameOfInterval,
-    'action': action,
-    'lpibg color': lpibgColor
-  };
+  Map toJson() =>
+      {
+        'nameOfWorkout': nameOfWorkout,
+        'lengthOfWorkout': lengthOfWorkout,
+        'numberOfIntervals': numberOfIntervals,
+        'sequenceOfInterval': sequenceOfInterval,
+        'runTime': runTime,
+        'durationOfInterval': durationOfInterval,
+        'nameOfInterval': nameOfInterval,
+        'action': action,
+        'lpibgColor': lpibgColor
+      };
+
+  // Used to decode from JSON
+  factory Intervall.fromJson(dynamic json) {
+    return Intervall(
+        json['nameOfWorkout'] as String,
+        json['lengthOfWorkout'] as int,
+        json['numberOfIntervals'] as int,
+        json['sequenceOfInterval'] as int,
+        json['runTime'] as int,
+        json['durationOfInterval'] as int,
+        json['nameOfInterval'] as String,
+        json['action'] as String,
+        json['lpibgColor'] as dynamic);
+  }
 
 
-  // Methods (Functions)
-  void printValues(){
-    print(nameOfWorkout);
-    print(sequenceOfInterval);
+  static Color stringToColor(String str) {
+    var color;
+    switch (str) {
+      case 'Colors.red':
+        {
+          color = Colors.red;
+          return color;
+        }
+        break;
+      case 'Colors.cyan':
+        {
+          color = Colors.cyan;
+          return color;
+        }
+        break;
+      case 'Colors.green':
+        {
+          color = Colors.green;
+          return color;
+        }
+        break;
+      case 'Colors.purple':
+        {
+          color = Colors.purple;
+          return color;
+        }
+        break;
+      case 'Colors.orange':
+        {
+          color = Colors.orange;
+          return color;
+        }
+        break;
+      default:
+        {
+          color = Colors.white;
+          return color;
+        }
+        break;
+
     }
-// Getters and Setters
+  }
 }

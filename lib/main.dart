@@ -7,14 +7,24 @@ import 'interval_brain.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'menuitems.dart';
 import 'workoutdetail.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-//import 'workoutdetail.dart';
+import 'getworkouts.dart';
+import 'dart:convert';
+import 'interval.dart';
+import 'workoutdata.dart';
 
 
+
+
+
+enum ConfirmAction { CANCEL, ACCEPT }
 IntervalBrain intervalBrain = new IntervalBrain();
+List<Intervall> intervalData = new List<Intervall>();
+int sequenceOfInterval = 0;
+String choice ='';
+int runTime = 0;
+
 
 void main() {
   runApp(
@@ -49,10 +59,11 @@ class MyHomePage extends StatefulWidget {
 
     final String title;
 
+
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
-
+final WorkoutData data = new WorkoutData();
 class _MyHomePageState extends State<MyHomePage> {
 
   int _intervalNumber = 0;
@@ -62,23 +73,34 @@ class _MyHomePageState extends State<MyHomePage> {
   Color _progressColor = Colors.red;
   int _progress = 0;
   double _progressValue = 0;
-  String _path;
   File files;
+  String selectedWorkout = 'No selected workout';
+//  String choice;
+  String _nameOfInterval;
+  String _nameOfWorkout;
+  bool _isFinished;
+  Future<Directory> workoutDir;
+  List<String> workoutList = [];
 
   Timer _timer;
   _MyHomePageState(){
+    this._nameOfWorkout = intervalBrain.intervalBank[0].nameOfWorkout;
+    this._nameOfInterval = intervalBrain.intervalBank[0].nameOfInterval;
+    this._durationOfInterval = intervalBrain.intervalBank[0].durationOfInterval;
+    this._progressColor = Intervall.stringToColor(intervalBrain.intervalBank[0].lpibgColor);
+    this._counter = intervalBrain.intervalBank[0].lengthOfWorkout;
+    this._isFinished = false;
 
-    this._durationOfInterval = intervalBrain.intervalBank[_intervalNumber].durationOfInterval;
-    this._progressColor = intervalBrain.intervalBank[_intervalNumber].lpibgColor;
-    this._counter = lengthOfWorkout();
-    }
+  }
+
+
 
 
   void _startTimer() {
    // _counter = lengthOfWorkout();
-
-         print(
-        'counter $_counter intervalNumber $_intervalNumber intervalDuration = $_durationOfInterval progress $_progress progressValue $_progressValue');
+//    print ('${intervalBrain.intervalBank[_intervalNumber].nameOfWorkout} ${intervalBrain.intervalBank[_intervalNumber].lengthOfWorkout} ${intervalBrain.intervalBank[_intervalNumber].nameOfInterval} ${intervalBrain.intervalBank[_intervalNumber].durationOfInterval}');
+//         print(
+//        'counter $_counter intervalNumber $_intervalNumber intervalDuration = $_durationOfInterval progress $_progress progressValue $_progressValue');
      beep ('highBeep.mp3');
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
@@ -93,7 +115,9 @@ class _MyHomePageState extends State<MyHomePage> {
               {
                 _progress = 1;
                 _intervalNumber++;
-                _progressColor = intervalBrain.intervalBank[_intervalNumber].lpibgColor;
+                _nameOfWorkout = intervalBrain.intervalBank[_intervalNumber].nameOfWorkout;
+                _nameOfInterval = intervalBrain.intervalBank[_intervalNumber].nameOfInterval;
+                _progressColor = Intervall.stringToColor(intervalBrain.intervalBank[_intervalNumber].lpibgColor);
                 _durationOfInterval = intervalBrain.intervalBank[_intervalNumber].durationOfInterval;
                 _progressValue = _progress / _durationOfInterval;
                 beep(intervalBrain.intervalBank[_intervalNumber].action);
@@ -119,6 +143,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
         } else {
           _timer.cancel();
+          _nameOfInterval = 'End';
+          _progressValue = 0;
+          _progressColor = Colors.white;
       }});
     });
   }
@@ -129,57 +156,212 @@ class _MyHomePageState extends State<MyHomePage> {
 
   }
 
-  void getWorkouts () async {
+    getWorkoutList(choice) async {
+// Get all the workout on file and write them to a pop up menu
+//  print ('getWorkoutList started');
+    List<FileSystemEntity> fileList = [];
+    List<String> workoutList = [];
 
-    // Will let you pick multiple pdf files at once
-    List<File> files = await FilePicker.getMultiFile(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'pdf', 'doc', 'txt'],
-    );
-    print(files);
+
+// Get the system directory.
+      Directory   workoutDir = await getApplicationDocumentsDirectory();
+//    final workoutDir = new Directory('/data/user/0/com.example.counterapp/app_flutter/');
+
+// List directory contents, not recursive
+    fileList = workoutDir.listSync(recursive: false, followLinks: false);
+
+//    for(var i=0;i< fileList.length - 1;i++) {
+//      print('$i ${fileList[i].path}');
+//    }
+
+    for (var i = 0; i < fileList.length - 1; i++) {
+      // check if the field is a workout
+//      print('in loop');
+
+      if (fileList[i].path.endsWith('.txt')) {
+//          print('file list = ${fileList[i]}');
+// Remove the path and write the file name to the workout list
+        var completePath = fileList[i].path;
+        var fileName = (completePath
+            .split('/')
+            .last);
+        fileName = fileName.substring(0, fileName.length - 4);
+        var filePath = completePath.replaceAll("/$fileName", '');
+        workoutList.add(fileName);
+      }
+    }
+//    workoutList.forEach((element) => print('workoutList = $element'));
+
+
+//    Go to screen to display the workouts available
+//    navigateAndDisplaySelection(context, choice, workoutList, workoutDir);
+//    print ('Selected workout in main is = $selectedWorkout');
+//    print ('getWorkoutList ended');
+    return workoutList;
   }
 
+  Future navigateAndDisplaySelection(BuildContext context, choice, workoutList) async {
+    print ('navigateAndDisplaySelection started');
 
-/*    var fileList =  [];
-    var workoutList = [];
-    int lengthPath = 0;
+      this.selectedWorkout = await Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (BuildContext context) =>
+              GetWorkouts(
+                  workoutList: workoutList
+           )),
+    );
+//print ('In async = $selectedWorkout');
+//print ('Choice = $choice');
 
-// Get the system temp directory.
-//    var systemTempDir = Directory.systemTemp;
-    final workoutDir = await getApplicationDocumentsDirectory();
-//    print ('workoutDir $workoutDir');
-    // List directory contents, not recursing into sub-directories,
-    // but not following symbolic links.
-         workoutDir.list(recursive: false, followLinks: false)
-        .listen((FileSystemEntity entity) {
-//         print(entity.path);
-//           final fileName = entity.path;
-//      print ('fileName $fileName');
-             fileList.add(entity.path);
-           print ('file list 1 = $fileList');
-         });
+      switch (choice) {
+        case (MenuItems.select) :
 
-      String path =   workoutDir.toString();
-      print ('path = $path');
-      print ('file list 2 = $fileList');
+          {print ('selected workout in switch is = $selectedWorkout');
+          await loadSelectedWorkout(selectedWorkout, workoutDir);
+          initialiseSelectedWorkout();
+          }
+          break;
 
-      for(var i = 0; i < fileList.length; i++) {
-        // check if the field is a workout
-        print ('in loop');
-        print('file list = ${fileList[i]}');
-        if(fileList[i].endsWith('.txt')) {
-          print('file list = ${fileList[i]}');
-          // Remove the path and write the file name to the workout list
-          workoutList.add(fileList[i].replaceAll(path, ''));
-        }
+        case (MenuItems.delete) :
+          {deleteSelectedWorkout(selectedWorkout, workoutDir);}
+          break;
+        case (MenuItems.edit) :
+          { await loadSelectedWorkout(selectedWorkout, workoutDir);
+            print ('Edit $selectedWorkout');
+          }
       }
 
-    workoutList.forEach((element) => print(element));
-
-
+//    print ('navigateAndDisplaySelection ended');
   }
-*/
+//------------------------------------------------------------------------------
+  Future loadSelectedWorkout(selectedWorkout, workoutDir) async{
+//    print ('loadSelectedWorkout started');
+//    print ('name of selected workout in load  = $selectedWorkout');
+//    final file = File('${workoutDir.path}/${selectedWorkout}.txt');
+      await _read(selectedWorkout);
+//    print ('loadSelectedWorkout finished');
+  }
 
+  Future _read(selectedWorkout) async {
+//      print ('_read started');
+    try {
+//      print ('selected workout = $selectedWorkout');
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/${selectedWorkout}.txt');
+//      final file = File('${directory.path}/${data.nameOfWorkout}.txt');
+//      print('file = $file');
+      String text =  await file.readAsString();
+//      print(text);
+      decodeJsonFile(text);
+    } catch (e) {
+      print("Couldn't read file");
+    }
+//    print ('_read ended');
+  }
+
+  Future decodeJsonFile(text) {
+//      print ('decodeJsonFile started');
+    var intervallObjsJson = jsonDecode(text) as List;
+//    print('interval object json $intervallObjsJson');
+    List<Intervall> newIntervalData = intervallObjsJson.map((tagJson) =>
+        Intervall.fromJson(tagJson)).toList();
+//    print('new intervaldata');
+//    print('i name of interval');
+//    for (var i = 0; i < newIntervalData.length - 1; i++) {
+//      print('$i ${newIntervalData[i].nameOfInterval}');
+//    }
+    setState(() {
+      intervalBrain.intervalBank = newIntervalData.map((element) => element).toList();
+      });
+//    print ('intervalBrain.intervalBank');
+//    print ('i name        dur int');
+//    for(var i=0;i< intervalBrain.intervalBank.length - 1;i++) {
+//
+//      print('$i ${intervalBrain.intervalBank[i].nameOfWorkout} ${intervalBrain.intervalBank[i].lengthOfWorkout} ${intervalBrain.intervalBank[i].nameOfInterval}');
+//    }
+//    print ('decodeJsonFile ended');
+//    intervalBrain.intervalBank = newIntervalData.map((element)=>element).toList();
+  }
+
+    Future initialiseSelectedWorkout() async{
+    print ('initialiseSelectedWorkout started');
+     _nameOfWorkout = intervalBrain.intervalBank[0].nameOfWorkout;
+    _nameOfInterval = intervalBrain.intervalBank[0].nameOfInterval;
+    _counter = intervalBrain.intervalBank[0].lengthOfWorkout;
+    _durationOfInterval = intervalBrain.intervalBank[0].durationOfInterval;
+    _progressColor = Intervall.stringToColor(intervalBrain.intervalBank[0].lpibgColor);
+//    print ('initialiseSelectedWorkout finished');
+  }
+  
+  
+void deleteSelectedWorkout(selectedWorkout, workoutDir){
+//  print ('in delete routine $selectedWorkout');
+    _asyncConfirmDelete(context, selectedWorkout, workoutDir);
+}
+
+
+Future<ConfirmAction> _asyncConfirmDelete(BuildContext context, selectedWorkout, workoutDir) async {
+  return showDialog<ConfirmAction>(
+    context: context,
+    barrierDismissible: false, // user must tap button for close dialog!
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text(selectedWorkout),
+        content: const Text(
+            'Are you sure you want to delete this workout.'),
+        actions: <Widget>[
+          FlatButton(
+            child: const Text('CANCEL'),
+            onPressed: () {
+              Navigator.of(context).pop(ConfirmAction.CANCEL);
+              print ('Do not delete file');
+            },
+          ),
+          FlatButton(
+            child: const Text('ACCEPT'),
+            onPressed: () {
+              Navigator.of(context).pop(ConfirmAction.ACCEPT);
+
+              final file = File('${workoutDir.path}/${selectedWorkout}.txt');
+              file.delete();
+//              print ('delete file $file');
+            },
+          )
+        ],
+      );
+    },
+  );
+}
+
+    void getWorkoutListAsync(choice) async {
+//    print ('getWorkoutListAysnc started');
+
+    workoutList = await getWorkoutList(choice);
+    await navigateAndDisplaySelection(context, choice, workoutList,);
+    await data.initialiseFirstRecord(choice);
+    await data.printWorkoutData();
+//    print ('intervalBrain.intervalBank');
+//    print ('i name        dur int');
+    for(var i=0;i< intervalBrain.intervalBank.length;i++) {
+
+//      print('$i ${intervalBrain.intervalBank[i].nameOfWorkout} ${intervalBrain.intervalBank[i].lengthOfWorkout} ${intervalBrain.intervalBank[i].nameOfInterval} ${intervalBrain.intervalBank[i].durationOfInterval}');
+    }if (choice == MenuItems.edit) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (BuildContext context) =>
+                WorkoutDetail(
+                    choice: choice,
+                    data: data
+                )),
+      );
+    }
+//    print ('getWorkoutListAsync  finished');
+    }
+
+
+/////////////////////////////////////////////////////////////////////////////
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -189,24 +371,58 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
         actions: <Widget>[
           PopupMenuButton<String>(
-            onSelected: (choice){
-              if(choice == MenuItems.select) {getWorkouts();
-
-              } else if (choice == MenuItems.add) {
-                Navigator.push(
+            onSelected: (choice) {
+//              final selectedChoice = choice;
+//---------------------------------------------------------------------------
+              switch (choice) {
+                case (MenuItems.select) :
+                  {
+                    getWorkoutListAsync(choice);
+                     }
+                  print (' In select menu');
+                  break;
+                case (MenuItems.add) :
+                  {
+//                    data.initialiseFirstRecord(choice);
+//                    data.printWorkoutData();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (BuildContext context) =>
+                              WorkoutDetail(
+                                choice: choice,
+                                data: data
+                              )),
+                    );
+                  }
+                  break;
+                case (MenuItems.delete) :
+                  {
+                    getWorkoutListAsync(choice);
+                  }
+                  break;
+                case (MenuItems.edit) :
+                  {getWorkoutListAsync(choice);
+/*
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (BuildContext context) => WorkoutDetail()),
-                    );
-              } else if (choice == MenuItems.delete) {print('Delete');
-              } else if (choice == MenuItems.edit) {print('Edit');
-              };
-            },
-            itemBuilder: (BuildContext context){
-              return MenuItems.choices.map((String choice){
+                        builder: (BuildContext context) =>
+                            WorkoutDetail(
+                                choice: choice,
+                                data: data
+                            )),
+                  );
+*/
+                  }
+
+              }
+           },
+            itemBuilder: (BuildContext context) {
+              return MenuItems.choices.map((String choice) {
                 return PopupMenuItem<String>(
-                    value: choice,
-                    child: Text(choice),
+                  value: choice,
+                  child: Text(choice),
                 );
               }).toList();
             },
@@ -229,8 +445,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 width: 325.0,
                 height: 40.0,
                 child: Text(
-                  intervalBrain.intervalBank[_intervalNumber].nameOfWorkout,
-                  style: Theme.of(context).textTheme.display1,
+                  _nameOfWorkout,
+                  style: Theme
+                      .of(context)
+                      .textTheme
+                      .display1,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -245,20 +464,23 @@ class _MyHomePageState extends State<MyHomePage> {
                 width: 325.0,
                 height: 40.0,
                 child: Text(
-                  intervalBrain.intervalBank[_intervalNumber].nameOfInterval,
-                  style: Theme.of(context).textTheme.display1,
+                  _nameOfInterval,
+                  style: Theme
+                      .of(context)
+                      .textTheme
+                      .display1,
                   textAlign: TextAlign.center,
                 ),
               ),
             ),
             Container(
-                height: 40.0,
-                width: 325.0,
-                child:
-                LinearProgressIndicator(
+              height: 40.0,
+              width: 325.0,
+              child:
+              LinearProgressIndicator(
                 value: _progressValue,
                 backgroundColor: _progressColor,
-                ),
+              ),
             ),
             SizedBox(
               height: 100.0,
@@ -267,7 +489,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             Card(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5.0)
+                  borderRadius: BorderRadius.circular(5.0)
               ),
               elevation: 10,
               child: Container(
@@ -275,7 +497,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 height: 40.0,
                 child: Text(
                   clockString(_counter),
-                  style: Theme.of(context).textTheme.display1,
+                  style: Theme
+                      .of(context)
+                      .textTheme
+                      .display1,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -287,33 +512,66 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.all(32.0),
         child: Row(
-         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-         children: <Widget>[
-           FloatingActionButton(
-             heroTag: 'first',
-            onPressed:
-            _resetTimer,
-            tooltip: 'Reset counter',
-            child: Text('Reset'),
-         ),
-           FloatingActionButton(
-             heroTag: 'second',
-             onPressed:
-             _startTimer,
-             tooltip: 'Start counter',
-             child: Text('Start'),
-    ),
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            FloatingActionButton(
+              heroTag: 'first',
+              onPressed:
+              _resetTimer,
+              tooltip: 'Reset counter',
+              child: Text('Reset'),
+            ),
+            FloatingActionButton(
+              heroTag: 'second',
+              onPressed:
+              _startTimer,
+              tooltip: 'Start counter',
+              child: Text('Start'),
+            ),
 
 
-           ],
-         ),
+          ],
+        ),
 
 
+      ),
+      // This trailing comma makes auto-formatting nicer for build methods.
 
 
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+    int _currentIndex = 1;
+
+    _displayDialog(BuildContext context) async {
+      return showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text('Select Workout'),
+              content: RadioListTile(
+                title: Text("Radio Text"),
+                groupValue: _currentIndex,
+                value: 1,
+                onChanged: (val) {
+                  setState(() {
+                    _currentIndex = val;
+                  });
+                },
+
+              ),
+
+              actions: <Widget>[
+                new FlatButton(
+                  child: new Text('CANCEL'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                )
+              ],
+            );
+          });
+    }
+
   void updateProgress(bool doBeep) {
     _progress++;
     _progressValue = _progress / _durationOfInterval;
@@ -337,33 +595,9 @@ LinearProgressIndicator progressBarColor(color) {
     backgroundColor: color,
   );
 }
-// Calculate the total length of the workout
-int lengthOfWorkout() {
-  int workoutLength = 0;
-  for (var i = 0; i < intervalBrain.intervalBank.length; i++) {
-    workoutLength += intervalBrain.intervalBank[i].durationOfInterval;
-  }
-  return workoutLength;
-}
 
 void beep(String beep) {
   final player = AudioCache();
   player.play(beep);
 }
-/*
-void menuChoice(String choice){
-  if(choice == MenuItems.select) {
-    print('Select');
-  }
-  else if(choice == MenuItems.add) {
-    print('Add');
-  }
-  else if(choice == MenuItems.delete) {
-    print('Delete');
-  }
-  if(choice == MenuItems.edit) {
-    print('Edit');
-  }
-}
 
- */
